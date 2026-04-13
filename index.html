@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产核算系统 v7.4</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        :root { --primary: #07C160; --bg: #f8f9fa; --dark: #1a1a1a; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+        #nav-page { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 15px; padding: 20px 0; }
+        .nav-btn { width: 85%; max-width: 320px; padding: 25px; background: #fff; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; cursor: pointer; border: 1px solid #eee; }
+        .nav-btn h3 { margin: 0 0 5px; font-size: 18px; color: #333; }
+        .nav-btn p { margin: 0; font-size: 12px; color: #999; }
+        .calc-container { display: none; padding: 15px; max-width: 500px; margin: 0 auto; }
+        .card { background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); position: relative; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .full { grid-column: span 2; }
+        label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; background: #fff; }
+        .result-box { background: var(--dark); color: #fff; padding: 18px; border-radius: 10px; }
+        .res-line { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dashed #444; padding-bottom: 6px; }
+        .res-val { color: var(--primary); font-family: 'Courier New', monospace; font-weight: bold; font-size: 18px; }
+        .u { font-size: 11px; color: #aaa; margin-left: 4px; }
+        .btn-share { width: 100%; margin-top: 15px; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .quick-select { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
+        .q-tag { padding: 6px 8px; background: #eee; border-radius: 6px; font-size: 11px; cursor: pointer; border: 1px solid #ddd; min-width: 38px; text-align: center; }
+        #img-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        #img-modal img { max-width: 90%; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="nav-page">
+    <div style="text-align: center; margin-bottom: 10px;">
+        <h2 style="margin:0;">生产核算系统 v7.4</h2>
+        <p style="color:#666; font-size:14px;">北京中心 · 新疆工厂专用</p>
+    </div>
+    <div class="nav-btn" onclick="openApp('film')"><h3>📜 薄膜计算</h3></div>
+    <div class="nav-btn" onclick="openApp('bag')"><h3>🛍️ 袋子计算</h3></div>
+    <div class="nav-btn" onclick="openApp('nw')"><h3>🧶 无纺布计算</h3></div>
+</div>
+
+<div id="film-app" class="calc-container">
+    <div class="header-row"><a href="javascript:void(0)" class="back-link" onclick="goHome()">⬅ 返回首页</a><b>薄膜核算</b></div>
+    <div class="card" id="cap-film">
+        <div class="grid">
+            <div class="full"><label>材质</label>
+                <select id="f_rho">
+                    <option value="0.95">Greenhouse Film</option>
+                    <option value="0.933">Silage Wrap</option>
+                    <option value="0.923">Stretch Film</option>
+                    <option value="0.94">Packing Film</option>
+                    <option value="1.0">Black White Film</option>
+                    <option value="1.4">BOPET</option>
+                </select>
+            </div>
+            <div><label>宽度 mm</label><input type="number" id="f_w" placeholder="输入宽度"></div>
+            <div><label>长度 m</label><input type="number" id="f_l" placeholder="输入长度"></div>
+            <div><label>厚度 μm (单层)</label><input type="number" id="f_t" placeholder="输入厚度"></div>
+            <div><label>重量 kg</label><input type="number" id="f_m" placeholder="输入重量"></div>
+            
+            <div class="full"><label>收卷</label>
+                <div style="display: flex; gap: 5px;">
+                    <select id="f_fac"><option value="1">单层</option><option value="2">双层</option><option value="4">4折</option><option value="8">8折</option></select>
+                    <select id="f_core"><option value="86">3''芯</option><option value="56">2''芯</option><option value="152">6''芯</option></select>
+                    <select id="f_ten"><option value="1.03">标准3%</option><option value="1.05">松5%</option></select>
+                </div>
+            </div>
+        </div>
+        <div class="result-box">
+            <div class="res-line"><span>结算重量</span><span class="res-val" id="rf_m">0.00 <small class="u">kg</small></span></div>
+            <div class="res-line"><span>总面积</span><span class="res-val" id="rf_a">0.00 <small class="u">m²</small></span></div>
+            <div class="res-line"><span>每平重量</span><span class="res-val" id="rf_u">0.000 <small class="u">kg/m²</small></span></div>
+            <div class="res-line"><span>成品卷径</span><span class="res-val" id="rf_d">0.0 <small class="u">mm</small></span></div>
+        </div>
+        <button class="btn-share" onclick="takeShot('cap-film')">生成分享图片</button>
+    </div>
+</div>
+
+<div id="bag-app" class="calc-container">
+    <div class="header-row"><a href="javascript:void(0)" class="back-link" onclick="goHome()">⬅ 返回首页</a><b>袋子核算</b></div>
+    <div class="card" id="cap-bag">
+        <div class="grid">
+            <div class="full"><label>袋子类型</label>
+                <select id="b_type" onchange="toggleBagFields()">
+                    <option value="tshirt">背心袋</option>
+                    <option value="drawstring">穿绳垃圾袋</option>
+                    <option value="flat_trash">平口垃圾袋</option>
+                    <option value="punch">打孔袋</option>
+                    <option value="patch">贴膜袋</option>
+                    <option value="handle">手挽袋</option>
+                </select>
+            </div>
+            <div><label>宽度 mm</label><input type="number" id="b_w" placeholder="输入宽度"></div>
+            <div><label>高度 mm</label><input type="number" id="b_h" placeholder="输入高度"></div>
+            
+            <div id="box_side"><label>侧风琴 mm</label><input type="number" id="b_side" value="0"></div>
+            <div id="box_fold_top" class="full" style="display:none;"><label>上折 mm</label><input type="number" id="b_fold_top" value="0"></div>
+            <div id="box_fold_bottom" class="full" style="display:none;"><label>底折 mm</label><input type="number" id="b_fold_bottom" value="0"></div>
+
+            <div class="full"><label>厚度μm</label>
+                <div style="display: flex; gap: 5px;">
+                    <input type="number" id="b_t" placeholder="输入厚度" style="flex:2">
+                    <select id="b_t_mode" style="flex:1" onchange="calcBag()">
+                        <option value="1">单面 μm</option>
+                        <option value="2">双面 μm</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="full"><label>印刷</label>
+                <select id="b_print">
+                    <option value="1">有印刷</option>
+                    <option value="0">无印刷</option>
+                </select>
+            </div>
+
+            <div id="box_waste" class="full"><label>背心袋废料扣除 %</label><input type="number" id="b_waste" value="25"></div>
+
+            <div><label>数量 pcs</label><input type="number" id="b_c" value="100000"></div>
+        </div>
+        <div class="result-box">
+            <div class="res-line"><span>单个克重</span><span class="res-val" id="rb_g">0.00 <small class="u">g</small></span></div>
+            <div class="res-line"><span>总重量</span><span class="res-val" id="rb_m">0.00 <small class="u">kg</small></span></div>
+        </div>
+        <button class="btn-share" onclick="takeShot('cap-bag')">生成分享图片</button>
+    </div>
+</div>
+
+<div id="nw-app" class="calc-container">
+    <div class="header-row"><a href="javascript:void(0)" class="back-link" onclick="goHome()">⬅ 返回首页</a><b>无纺布核算</b></div>
+    <div class="card" id="cap-nw">
+        <label>快捷选择克重</label>
+        <div class="quick-select" id="nw_quick"></div>
+        <div class="grid">
+            <div><label>克重 GSM</label><input type="number" id="nw_gsm" value="15"></div>
+            <div><label>宽度 mm</label><input type="number" id="nw_w" value="1000"></div>
+            <div><label>长度 m</label><input type="number" id="nw_l" value="1000"></div>
+            <div><label>总重 kg</label><input type="number" id="nw_m" placeholder="重量"></div>
+            
+            <div class="full"><label>收卷张力补偿</label>
+                <select id="nw_tension">
+                    <option value="-0.03">松卷</option>
+                    <option value="0">标准</option>
+                    <option value="0.03" selected>紧卷</option>
+                </select>
+            </div>
+            
+            <div class="full"><label>卷芯mm</label>
+                <select id="nw_core">
+                    <option value="86" selected>3''芯 (86mm)</option>
+                    <option value="56">2''芯 (56mm)</option>
+                    <option value="152">6''芯 (152mm)</option>
+                </select>
+            </div>
+        </div>
+        <div class="result-box">
+            <div class="res-line"><span>动态收卷密度</span><span class="res-val" id="rnw_rho">0.000 <small class="u">g/cm³</small></span></div>
+            <div class="res-line"><span>结算重量</span><span class="res-val" id="rnw_m">0.00 <small class="u">kg</small></span></div>
+            <div class="res-line"><span>成品卷径</span><span class="res-val" id="rnw_d">0.0 <small class="u">mm</small></span></div>
+        </div>
+        <button class="btn-share" onclick="takeShot('cap-nw')">生成分享图片</button>
+    </div>
+</div>
+
+<div id="img-modal" onclick="this.style.display='none'">
+    <div style="color:#fff; margin-bottom:10px;">长按图片保存</div>
+    <img id="screenshot" src="">
+</div>
+
+<script>
+    function openApp(t){ document.getElementById('nav-page').style.display='none'; document.getElementById(t+'-app').style.display='block'; if(t==='bag') toggleBagFields(); if(t==='nw') calcNW('nw_gsm'); }
+    function goHome(){ document.getElementById('nav-page').style.display='flex'; document.querySelectorAll('.calc-container').forEach(c=>c.style.display='none'); }
+
+    // --- 薄膜逻辑 ---
+    const f_ids=['f_rho','f_w','f_l','f_t','f_m','f_fac','f_core','f_ten'];
+    f_ids.forEach(id=>document.getElementById(id).addEventListener('input',e=>{
+        const rho=parseFloat(document.getElementById('f_rho').value), w=parseFloat(document.getElementById('f_w').value), t=parseFloat(document.getElementById('f_t').value),
+              fac=parseInt(document.getElementById('f_fac').value), core=parseFloat(document.getElementById('f_core').value), ten=parseFloat(document.getElementById('f_ten').value);
+        let l=parseFloat(document.getElementById('f_l').value), m=parseFloat(document.getElementById('f_m').value);
+        if(!w||!t)return;
+        if(e.target.id==='f_m'){ l=(m*1000000)/(w*t*rho); document.getElementById('f_l').value=Math.round(l)||''; }
+        else{ m=(w*(l||0)*t*rho)/1000000; document.getElementById('f_m').value=m?m.toFixed(2):''; }
+        const dia=Math.sqrt((4*(l||0)*t*fac*ten)/Math.PI+Math.pow(core,2));
+        document.getElementById('rf_m').innerText=m.toFixed(2);
+        document.getElementById('rf_a').innerText=((w*(l||0))/1000).toFixed(2);
+        document.getElementById('rf_u').innerText=(t*rho/1000).toFixed(4);
+        document.getElementById('rf_d').innerText=dia.toFixed(1);
+    }));
+
+    // --- 袋子逻辑 ---
+    function toggleBagFields(){
+        const t=document.getElementById('b_type').value;
+        document.getElementById('box_side').style.display=(t==='tshirt')?'block':'none';
+        document.getElementById('box_waste').style.display=(t==='tshirt')?'block':'none';
+        document.getElementById('box_fold_top').style.display=(['drawstring','punch','handle'].includes(t))?'block':'none';
+        document.getElementById('box_fold_bottom').style.display=(['punch','patch','handle'].includes(t))?'block':'none';
+        calcBag();
+    }
+
+    function calcBag(){
+        const type = document.getElementById('b_type').value, 
+              w = parseFloat(document.getElementById('b_w').value)||0, 
+              h = parseFloat(document.getElementById('b_h').value)||0,
+              t = parseFloat(document.getElementById('b_t').value)||0, 
+              t_mode = parseInt(document.getElementById('b_t_mode').value)||1,
+              c = parseFloat(document.getElementById('b_c').value)||0,
+              side = parseFloat(document.getElementById('b_side').value)||0, 
+              wasteRatio = parseFloat(document.getElementById('b_waste').value)||0,
+              topF = parseFloat(document.getElementById('b_fold_top').value)||0, 
+              botF = parseFloat(document.getElementById('b_fold_bottom').value)||0,
+              isPrinted = document.getElementById('b_print').value === '1';
+        
+        if(!w || !h || !t) return; // 输入不全时不报错等待填写
+
+        const actual_t = (t_mode === 2) ? t / 2 : t;
+        let g = 0; const rho = 0.95; 
+        
+        if(type === 'tshirt') {
+            const raw_g = ((w + side * 2) * h * actual_t * rho * 2) / 1000000;
+            g = raw_g * (1 - wasteRatio / 100);
+        } else if (type === 'flat_trash') {
+            g = (w * h * actual_t * rho * 2) / 1000000;
+        } else {
+            let effH = h;
+            if(['drawstring','punch','handle'].includes(type)) effH += topF;
+            if(['punch','patch','handle'].includes(type)) effH += botF; 
+            
+            g = (w * effH * actual_t * rho * 2) / 1000000;
+            if(type === 'patch') g += 1.3; 
+            if(type === 'handle') g += 2.5; 
+        }
+
+        if(isPrinted) g += 0.5;
+
+        document.getElementById('rb_g').innerText = g.toFixed(3);
+        document.getElementById('rb_m').innerText = (g * c / 1000).toFixed(2);
+    }
+    ['b_type','b_w','b_h','b_t','b_t_mode','b_print','b_c','b_side','b_waste','b_fold_top','b_fold_bottom'].forEach(id=>document.getElementById(id).addEventListener('input',calcBag));
+
+    // --- 无纺布逻辑 ---
+    const nw_gsm_list=[8,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100];
+    const qBox=document.getElementById('nw_quick');
+    nw_gsm_list.forEach(gsm=>{
+        let s=document.createElement('span'); s.className='q-tag'; s.innerText=gsm+'g';
+        s.onclick=()=>{ document.getElementById('nw_gsm').value=gsm; calcNW('nw_gsm'); };
+        qBox.appendChild(s);
+    });
+    
+    function calcNW(tid){
+        const gsm = parseFloat(document.getElementById('nw_gsm').value)||0, 
+              w = parseFloat(document.getElementById('nw_w').value)||0, 
+              core = parseFloat(document.getElementById('nw_core').value)||0, 
+              tensionOffset = parseFloat(document.getElementById('nw_tension').value)||0;
+        
+        let l = parseFloat(document.getElementById('nw_l').value), 
+            m = parseFloat(document.getElementById('nw_m').value);
+            
+        let baseDensity = 0.25 - (gsm * 0.001); 
+        if (baseDensity < 0.12) baseDensity = 0.12; 
+        const dynamicDensity = baseDensity + tensionOffset;
+
+        if(tid==='nw_m'){ 
+            l=(m*1000000)/(w*gsm); 
+            document.getElementById('nw_l').value=Math.round(l)||''; 
+        } else { 
+            m=(w*(l||0)*gsm)/1000000; 
+            document.getElementById('nw_m').value=m?m.toFixed(2):''; 
+        }
+        
+        const dia=Math.sqrt((4*(l||0)*gsm)/(Math.PI*dynamicDensity)+Math.pow(core,2));
+        
+        document.getElementById('rnw_rho').innerText=dynamicDensity.toFixed(3); 
+        document.getElementById('rnw_m').innerText=m.toFixed(2);
+        document.getElementById('rnw_d').innerText=dia.toFixed(1);
+    }
+    ['nw_gsm','nw_w','nw_l','nw_m','nw_core','nw_tension'].forEach(id=>document.getElementById(id).addEventListener('input',e=>calcNW(e.target.id)));
+
+    // --- 截图功能 ---
+    function takeShot(id){
+        const target = document.getElementById(id);
+        const btn = target.querySelector('.btn-share');
+        btn.style.display = 'none';
+        html2canvas(target, { backgroundColor:'#f8f9fa', scale:2 }).then(canvas => {
+            document.getElementById('screenshot').src = canvas.toDataURL("image/png");
+            document.getElementById('img-modal').style.display = 'flex';
+            btn.style.display = 'block';
+        });
+    }
+</script>
+</body>
+</html>
